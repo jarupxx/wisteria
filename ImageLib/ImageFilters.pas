@@ -19,6 +19,7 @@ procedure RotateFilter(Src: TBitmap; Angle: Integer; PProc: TProgressProc);
 procedure TrimFilter(Src: TBitmap; R: TRect; FillColor: string;
   PProc: TProgressProc);
 procedure WhiteFilter(Src: TBitmap; Threshold: Integer; PProc: TProgressProc);
+procedure BlackFilter(Src: TBitmap; Threshold: Integer; PProc: TProgressProc);
 procedure LMapFilter(Src: TBitmap; VList: string; PProc: TProgressProc);
 procedure LumaMapFilter(Src: TBitmap; PProc: TProgressProc);
 procedure IndexedFilter(Src: TBitmap; var Grayscale: Boolean;
@@ -1122,6 +1123,42 @@ begin
         DP[X].B := 255;
         DP[X].G := 255;
         DP[X].R := 255;
+      end
+      else
+        DP[X] := SP[X];
+    end;
+    PProc(100 * Y div (Src.Height - 1));
+  end;
+  Src.Assign(Dst);
+  FreeAndNil(Dst);
+end;
+
+procedure BlackFilter(Src: TBitmap; Threshold: Integer; PProc: TProgressProc);
+var
+  Dst: TBitmap;
+  X, Y: Integer;
+  SP, DP: PRGBArray;
+begin
+  if (Src = nil) or Src.Empty then
+    Exit;
+  ConvertToTrueColor(Src);
+  if not Assigned(PProc) then
+    PProc := NullProgressProc;
+
+  PProc(0);
+  Dst := TBitmap.Create;
+  Dst.Assign(Src);
+  for Y := 0 to Src.Height - 1 do
+  begin
+    SP := Src.ScanLine[Y];
+    DP := Dst.ScanLine[Y];
+    for X := 0 to Src.Width - 1 do
+    begin
+      if (SP[X].B <= Threshold) and (SP[X].G <= Threshold) and (SP[X].R <= Threshold) then
+      begin
+        DP[X].B := 0;
+        DP[X].G := 0;
+        DP[X].R := 0;
       end
       else
         DP[X] := SP[X];

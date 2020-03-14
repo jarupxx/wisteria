@@ -87,8 +87,10 @@ type
     HeightEdit: TEdit;
     AutoIndexedMenu: TMenuItem;
     WhiteValueMenu: TMenuItem;
+    BlackValueMenu: TMenuItem;
     ExifAutoRotateMenu: TMenuItem;
     WhiteFilterMenu: TMenuItem;
+    BlackFilterMenu: TMenuItem;
     IncludeSubDirMenu: TMenuItem;
     IdleModeMenu: TMenuItem;
     FileListSortMenu: TMenuItem;
@@ -117,6 +119,7 @@ type
     GoGitHubMenu: TMenuItem;
     GoGitHubIssuesMenu: TMenuItem;
     procedure WhiteValueMenuClick(Sender: TObject);
+    procedure BlackValueMenuClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ExitMenuClick(Sender: TObject);
     procedure AboutMenuClick(Sender: TObject);
@@ -181,6 +184,7 @@ type
     FLMapValue: string;
     FEnableLMap: Boolean;
     FWhiteValue: Integer;
+    FBlackValue: Integer;
     FPngCompress: Integer;
     FPostExec: string;
     FDisableIL: Boolean;
@@ -260,6 +264,8 @@ type
     function GetAutoRotate: Boolean;
     procedure SetDoWhite(const Value: Boolean);
     function GetDoWhite: Boolean;
+    procedure SetDoBlack(const Value: Boolean);
+    function GetDoBlack: Boolean;
     function GetIncludeSubDir: Boolean;
     procedure SetIncludeSubDir(const Value: Boolean);
     function GetIdleMode: Boolean;
@@ -348,6 +354,8 @@ type
     property AutoRotate: Boolean read GetAutoRotate write SetAutoRotate;
     property DoWhite: Boolean read GetDoWhite write SetDoWhite;
     property WhiteValue: Integer read FWhiteValue write FWhiteValue;
+    property DoBlack: Boolean read GetDoBlack write SetDoBlack;
+    property BlackValue: Integer read FBlackValue write FBlackValue;
     property DoLMap: Boolean read GetDoLMap write SetDoLMap;
     property LMapValue: string read FLMapValue write FLMapValue;
     property EnableLMap: Boolean read FEnableLMap write FEnableLMap;
@@ -1119,6 +1127,13 @@ var
       WhiteFilter(Src, WhiteValue, ProgressProc);
     end;
 
+    if DoBlack then
+    begin
+      ProcessForm.ProcessSituation := '黒色化中';
+      Application.ProcessMessages;
+      BlackFilter(Src, BlackValue, ProgressProc);
+    end;
+
     if AbortRequire then
     begin
       Result := False;
@@ -1591,6 +1606,7 @@ begin
   TrimRect := '0,0,0,0';
   EnableLMap := False;
   WhiteValue := 230;
+  BlackValue := 30;
   DisableIL := False;
   DisableIS := False;
   MinimizedStart := False;
@@ -1732,6 +1748,8 @@ begin
         GrayscaleMethod);
       DoWhite := ReadBool('Filter', 'WhiteFilter', DoWhite);
       WhiteValue := ReadInteger('Filter', 'WhiteValue', WhiteValue);
+      DoBlack := ReadBool('Filter', 'BlackFilter', DoBlack);
+      BlackValue := ReadInteger('Filter', 'BlackValue', BlackValue);
       DoLMap := ReadBool('Filter', 'LMapFilter', DoLMap);
       LMapValue := ReadString('Filter', 'LMapValue', LMapValue);
 
@@ -1845,6 +1863,8 @@ begin
       WriteInteger('Filter', 'GrayscaleMethod', GrayscaleMethod);
       WriteBool('Filter', 'WhiteFilter', DoWhite);
       WriteInteger('Filter', 'WhiteValue', WhiteValue);
+      WriteBool('Filter', 'BlackFilter', DoBlack);
+      WriteInteger('Filter', 'BlackValue', BlackValue);
       WriteBool('Filter', 'LMapFilter', DoLMap);
       WriteString('Filter', 'LMapValue', LMapValue);
 
@@ -2723,9 +2743,19 @@ begin
   WhiteFilterMenu.Checked := Value;
 end;
 
+procedure TMainForm.SetDoBlack(const Value: Boolean);
+begin
+  BlackFilterMenu.Checked := Value;
+end;
+
 function TMainForm.GetDoWhite: Boolean;
 begin
   Result := WhiteFilterMenu.Checked;
+end;
+
+function TMainForm.GetDoBlack: Boolean;
+begin
+  Result := BlackFilterMenu.Checked;
 end;
 
 procedure TMainForm.WhiteValueMenuClick(Sender: TObject);
@@ -2737,6 +2767,18 @@ begin
   begin
     WhiteValue := StrToIntDefWithRange(S, WhiteValue, 0, 255);
     DoWhite := True;
+  end;
+end;
+
+procedure TMainForm.BlackValueMenuClick(Sender: TObject);
+var
+  S: string;
+begin
+  S := IntToStr(BlackValue);
+  if InputQuery('黒色化閾値', '閾値 (0～255)', S) then
+  begin
+    BlackValue := StrToIntDefWithRange(S, BlackValue, 0, 255);
+    DoBlack := True;
   end;
 end;
 
