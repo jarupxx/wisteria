@@ -387,6 +387,11 @@ object MainForm: TMainForm
         Hint = #25351#23450#36637#24230#20197#19978#12398#30011#32032#12434#30333#33394#21270#12375#12414#12377
         OnClick = CheckMenuClick
       end
+      object EdgeLumaFilterMenu: TMenuItem
+        Caption = #12456#12483#12472#36637#24230#35036#27491'(&M)'
+        Hint = #12456#12483#12472#37096#12398#36637#24230#12434#35036#27491#12375#12414#12377
+        OnClick = CheckMenuClick
+      end
       object TrimMenu: TMenuItem
         Caption = #20999#12426#25244#12365'(&T)'
         Hint = #30011#20687#12434#20999#12426#25244#12365#12414#12377
@@ -449,6 +454,11 @@ object MainForm: TMainForm
         Caption = #30333#33394#21270#38334#20516'(&W)...'
         Hint = #30333#33394#21270#12398#38334#20516#12434#35373#23450#12375#12414#12377
         OnClick = WhiteValueMenuClick
+      end
+      object EdgeLumaValueMenu: TMenuItem
+        Caption = #12456#12483#12472#36637#24230#38334#20516'(&M)...'
+        Hint = #36637#24230#12398#35336#31639#24335#12434#35373#23450#12375#12414#12377
+        OnClick = EdgeLumaValueMenuClick
       end
       object TrimValueMenu: TMenuItem
         Caption = #20999#12426#25244#12365#31684#22258'(&T)...'
