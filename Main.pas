@@ -87,8 +87,10 @@ type
     HeightEdit: TEdit;
     AutoIndexedMenu: TMenuItem;
     WhiteValueMenu: TMenuItem;
+    EdgeLumaValueMenu: TMenuItem;
     ExifAutoRotateMenu: TMenuItem;
     WhiteFilterMenu: TMenuItem;
+    EdgeLumaFilterMenu: TMenuItem;
     IncludeSubDirMenu: TMenuItem;
     IdleModeMenu: TMenuItem;
     FileListSortMenu: TMenuItem;
@@ -117,6 +119,7 @@ type
     GoGitHubMenu: TMenuItem;
     GoGitHubIssuesMenu: TMenuItem;
     procedure WhiteValueMenuClick(Sender: TObject);
+    procedure EdgeLumaValueMenuClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ExitMenuClick(Sender: TObject);
     procedure AboutMenuClick(Sender: TObject);
@@ -181,6 +184,8 @@ type
     FLMapValue: string;
     FEnableLMap: Boolean;
     FWhiteValue: Integer;
+    FEdgeLumaValue: Integer;
+    FEdgeWhiteValue: Integer;
     FPngCompress: Integer;
     FPostExec: string;
     FDisableIL: Boolean;
@@ -260,6 +265,8 @@ type
     function GetAutoRotate: Boolean;
     procedure SetDoWhite(const Value: Boolean);
     function GetDoWhite: Boolean;
+    procedure SetDoEdgeLuma(const Value: Boolean);
+    function GetDoEdgeLuma: Boolean;
     function GetIncludeSubDir: Boolean;
     procedure SetIncludeSubDir(const Value: Boolean);
     function GetIdleMode: Boolean;
@@ -348,6 +355,9 @@ type
     property AutoRotate: Boolean read GetAutoRotate write SetAutoRotate;
     property DoWhite: Boolean read GetDoWhite write SetDoWhite;
     property WhiteValue: Integer read FWhiteValue write FWhiteValue;
+    property DoEdgeLuma: Boolean read GetDoEdgeLuma write SetDoEdgeLuma;
+    property EdgeLumaValue: Integer read FEdgeLumaValue write FEdgeLumaValue;
+    property EdgeWhiteValue: Integer read FEdgeWhiteValue write FEdgeWhiteValue;
     property DoLMap: Boolean read GetDoLMap write SetDoLMap;
     property LMapValue: string read FLMapValue write FLMapValue;
     property EnableLMap: Boolean read FEnableLMap write FEnableLMap;
@@ -1310,13 +1320,20 @@ var
             SharpenFilter(Src, (100 - SharpValue) + 21, ProgressProc);
           end;
         '8':
+          if DoEdgeLuma then
+          begin
+            ProcessForm.ProcessSituation := 'エッジ白色化中';
+            Application.ProcessMessages;
+            EdgeLumaFilter(Src, EdgeLumaValue, EdgeWhiteValue, ProgressProc);
+            end;
+        'A':
           if DoGrayscale then
           begin
             ProcessForm.ProcessSituation := '白黒化中';
             Application.ProcessMessages;
             GrayscaleFilter(Src, GrayscaleMethod, ProgressProc);
             ProcInfo.Grayscale := True;
-          end
+          end;
           else
           begin
             if AutoIndexed then
@@ -1591,12 +1608,14 @@ begin
   TrimRect := '0,0,0,0';
   EnableLMap := False;
   WhiteValue := 230;
+  EdgeLumaValue := 18;
+  EdgeWhiteValue := 230;
   DisableIL := False;
   DisableIS := False;
   MinimizedStart := False;
   TrimRectError := False;
   TrimRectFillColor := '#ffffff';
-  FilterOrder := '012345678';
+  FilterOrder := '012345678A';
   MaxThreads := 0;
   ContinueOnError := False;
 
@@ -1732,6 +1751,9 @@ begin
         GrayscaleMethod);
       DoWhite := ReadBool('Filter', 'WhiteFilter', DoWhite);
       WhiteValue := ReadInteger('Filter', 'WhiteValue', WhiteValue);
+      DoEdgeLuma := ReadBool('Filter', 'EdgeLumaFilter', DoEdgeLuma);
+      EdgeLumaValue := ReadInteger('Filter', 'EdgeLumaValue', EdgeLumaValue);
+      EdgeWhiteValue := ReadInteger('Filter', 'EdgeWhiteValue', EdgeWhiteValue);
       DoLMap := ReadBool('Filter', 'LMapFilter', DoLMap);
       LMapValue := ReadString('Filter', 'LMapValue', LMapValue);
 
@@ -1845,6 +1867,9 @@ begin
       WriteInteger('Filter', 'GrayscaleMethod', GrayscaleMethod);
       WriteBool('Filter', 'WhiteFilter', DoWhite);
       WriteInteger('Filter', 'WhiteValue', WhiteValue);
+      WriteBool('Filter', 'EdgeLumaFilter', DoEdgeLuma);
+      WriteInteger('Filter', 'EdgeLumaValue', EdgeLumaValue);
+      WriteInteger('Filter', 'EdgeWhiteValue', EdgeWhiteValue);
       WriteBool('Filter', 'LMapFilter', DoLMap);
       WriteString('Filter', 'LMapValue', LMapValue);
 
@@ -2728,6 +2753,16 @@ begin
   Result := WhiteFilterMenu.Checked;
 end;
 
+procedure TMainForm.SetDoEdgeLuma(const Value: Boolean);
+begin
+  EdgeLumaFilterMenu.Checked := Value;
+end;
+
+function TMainForm.GetDoEdgeLuma: Boolean;
+begin
+  Result := EdgeLumaFilterMenu.Checked;
+end;
+
 procedure TMainForm.WhiteValueMenuClick(Sender: TObject);
 var
   S: string;
@@ -2737,6 +2772,19 @@ begin
   begin
     WhiteValue := StrToIntDefWithRange(S, WhiteValue, 0, 255);
     DoWhite := True;
+  end;
+end;
+
+procedure TMainForm.EdgeLumaValueMenuClick(Sender: TObject);
+var
+  S: string;
+begin
+  S := Format('%d/%d', [EdgeLumaValue, EdgeWhiteValue]);
+  if InputQuery('エッジ･白色化閾値', '閾値: エッジ/白', S) then
+  begin
+    EdgeLumaValue := StrToIntDef(Copy(S, 1, Pos('/', S) - 1), 0);
+    EdgeWhiteValue := StrToIntDef(Copy(S, Pos('/', S) + 1, Length(S)), 255);
+    DoEdgeLuma := True;
   end;
 end;
 

@@ -19,6 +19,7 @@ procedure RotateFilter(Src: TBitmap; Angle: Integer; PProc: TProgressProc);
 procedure TrimFilter(Src: TBitmap; R: TRect; FillColor: string;
   PProc: TProgressProc);
 procedure WhiteFilter(Src: TBitmap; Threshold: Integer; PProc: TProgressProc);
+procedure EdgeLumaFilter(Src: TBitmap; Hani, WhiteThreshold: Integer; PProc: TProgressProc);
 procedure LMapFilter(Src: TBitmap; VList: string; PProc: TProgressProc);
 procedure LumaMapFilter(Src: TBitmap; PProc: TProgressProc);
 procedure IndexedFilter(Src: TBitmap; var Grayscale: Boolean;
@@ -1125,6 +1126,89 @@ begin
       end
       else
         DP[X] := SP[X];
+    end;
+    PProc(100 * Y div (Src.Height - 1));
+  end;
+  Src.Assign(Dst);
+  FreeAndNil(Dst);
+end;
+
+procedure EdgeLumaFilter(Src: TBitmap; Hani, WhiteThreshold: Integer; PProc: TProgressProc);
+var
+  Dst: TBitmap;
+  X, Y: Integer;
+  // L: Extended;
+  SP, DP: PRGBArray;
+  R, G, B: Integer;
+begin
+  if (Src = nil) or Src.Empty then
+    Exit;
+  ConvertToTrueColor(Src);
+  if not Assigned(PProc) then
+    PProc := NullProgressProc;
+
+  PProc(0);
+  Dst := TBitmap.Create;
+  Dst.Assign(Src);
+  for Y := 0 to Src.Height - 1 do
+  begin
+    SP := Src.ScanLine[Y];
+    DP := Dst.ScanLine[Y];
+    for X := 0 to Src.Width - 1 do
+    begin
+      R := SP[X].R;
+      G := SP[X].G;
+      B := SP[X].B;
+      // Hack 外側の白色化
+      // X = Src.Width,Y = Src.Height
+      // Haniの外側75%は強く処理
+      if (X <= Src.Width * Hani * 0.01 * 0.75 ) or (X >= Src.Width * (1 - Hani * 0.01 * 0.75)) or (Y <= Src.Height * Hani * 0.01 * 0.75 ) or (Y >= Src.Height * (1 - Hani * 0.01 * 0.75)) then begin
+        if R >= WhiteThreshold then
+        begin
+          R := Trunc(R + 10);
+        end;
+        if G >= WhiteThreshold then
+        begin
+          G := Trunc(G + 10);
+        end;
+        if B >= WhiteThreshold then
+        begin
+          B := Trunc(B + 10);
+        end;
+      end;
+      // 全体を処理
+      if (X <= Src.Width * Hani * 0.01 ) or (X >= Src.Width * (1 - Hani * 0.01)) or (Y <= Src.Height * Hani * 0.01 ) or (Y >= Src.Height * (1 - Hani * 0.01)) then begin
+        if R >= ( WhiteThreshold + 7 ) then
+        begin
+          R := 255;
+        end;
+        if G >= ( WhiteThreshold + 7 ) then
+        begin
+          G := 255;
+        end;
+        if B >= ( WhiteThreshold + 7 ) then
+        begin
+          B := 255;
+        end;
+      end;
+      if R > 255 then
+        DP[X].R := 255
+      else if R < 0 then
+        DP[X].R := 0
+      else
+        DP[X].R := R;
+      if G > 255 then
+        DP[X].G := 255
+      else if G < 0 then
+        DP[X].G := 0
+      else
+        DP[X].G := G;
+      if B > 255 then
+        DP[X].B := 255
+      else if B < 0 then
+        DP[X].B := 0
+      else
+        DP[X].B := B;
     end;
     PProc(100 * Y div (Src.Height - 1));
   end;
